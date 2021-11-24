@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+export PATH=$PATH:$(pwd)/bin
 COLORS=0
 DEFAULT_POST_CMD="echo -e \"MYPID=\$MYPID\nTS=\$TS\nMS=\$MS\""
-if ! command -v ansi; then
-  alias ansi=$(pwd)/ansi
-fi
 
 ansi --cyan --bold "Epoch MS: $(date +%s%3N)"
 ansi --magenta --bold "Epoch: $(date +%s)"
