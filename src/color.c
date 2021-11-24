@@ -86,8 +86,12 @@ void usage( void ) {
 
 void fgcolor( char *clr ) {
     unsigned int i;
-    if( !strcmp(clr,"off") ) {
-        printf( NOCOLOR );
+    if( 
+        !strcmp(clr,"off") 
+        || !strcmp(clr,"reset") 
+        || !strcmp(clr,"clear") 
+    ) {
+        printf( FG_RESET );
         return;
     } else if( !strcmp(clr,"bd") ) {
         printf( FG_BD );
@@ -113,6 +117,12 @@ void fgcolor( char *clr ) {
     } else if( !strcmp(clr,"blink") ) {
         printf( FG_BLINK );
         return;
+    } else if( !strcmp(clr,"ired") ) {
+        printf( FG_I_RED );
+        return;
+    } else if( !strcmp(clr,"iyellow") ) {
+        printf( FG_I_YELLOW );
+        return;
     } else if( !strcmp(clr,"italic") ) {
         printf( FG_ITALIC );
         return;
@@ -137,6 +147,19 @@ void fgcolor( char *clr ) {
 
 void bgcolor( char *clr ) {
     unsigned int i;
+    if( 
+        !strcmp(clr,"reset") 
+        || !strcmp(clr,"clear") 
+    ) {
+      return bgcolor("off");
+    }
+
+    if( 
+        !strcmp(clr,"off") 
+    ) {
+      return printf(BG_RESET);
+    }
+
     for( i=0; i<8; i++ ) {
         if( !strcmp(clr,colors[i]) ) {
             printf( "\033[%dm", 40+i );
@@ -194,7 +217,9 @@ int on_bg_color = 0;
         return EXECUTION_SUCCESS;
       }
 
-      if ((strcasecmp(list->word->word, "off") == 0) ||  (strcasecmp(list->word->word, "clear") == 0) || (strcasecmp(list->word->word, "reset") == 0) || (strcasecmp(list->word->word, "off") == 0)){
+      if ((strcasecmp(list->word->word, "off") == 0) ||  (strcasecmp(list->word->word, "clear") == 0) || (strcasecmp(list->word->word, "reset") == 0) || (strcasecmp(list->word->word, "off") == 0)
+          || (strcasecmp(list->word->word, "--reset") == 0)
+        ){
         fgcolor("off");
         bgcolor("off");
         return EXECUTION_SUCCESS;

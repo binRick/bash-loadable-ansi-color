@@ -3,8 +3,10 @@
 
 #define FG_BLACK    "\033[0;30m"
 #define FG_RED      "\033[0;31m"
+#define FG_I_RED      "\033[0;91m"
 #define FG_GREEN    "\033[0;32m"
 #define FG_YELLOW   "\033[0;33m"
+#define FG_I_YELLOW   "\033[0;93m"
 #define FG_BLUE     "\033[0;34m"
 #define FG_MAGENTA  "\033[0;35m"
 #define FG_CYAN     "\033[0;36m"
@@ -37,6 +39,8 @@
 #define FG_INVERSE   "\033[7m"
 #define FG_INVISIBLE "\033[8m"
 #define FG_STRIKE    "\033[29m"
+#define FG_RESET      "\033[0m"
 #define NOCOLOR      "\033[0m"
+#define BG_RESET      "\033[49m"
 
 #endif
