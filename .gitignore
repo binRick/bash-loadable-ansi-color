@@ -17,3 +17,5 @@ compile
 autom4te.cache
 aclocal.m4
 src/.attic
+Makefile
+src/Makefile

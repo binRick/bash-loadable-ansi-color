@@ -1,8 +1,6 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#define VERSION     1.1
-
 #define FG_BLACK    "\033[0;30m"
 #define FG_RED      "\033[0;31m"
 #define FG_GREEN    "\033[0;32m"
