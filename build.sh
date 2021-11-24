@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 td=$(mktemp -d)
 of=$td/stdout
 QTY=119
