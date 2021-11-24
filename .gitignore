@@ -7,7 +7,6 @@ src/.deps
 *.la
 *.so
 missing
-m4
 ltmain.sh
 libtool
 install-sh
