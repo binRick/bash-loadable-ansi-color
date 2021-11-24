@@ -1,4 +1,4 @@
-AC_INIT(hello, 0.1)
+AC_INIT(color, 0.1)
 
 # Many autoconf project creates a config.h.  however the bash headers
 # already use their own version of config.h that, since bash 4.4, is
