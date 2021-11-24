@@ -6,10 +6,14 @@ if ! command -v ansi; then
   alias ansi=$(pwd)/ansi
 fi
 
+ansi --cyan --bold "Epoch MS: $(date +%s%3N)"
+ansi --magenta --bold "Epoch: $(date +%s)"
+
+
 test_builtin() {
 	local M="$1"
 	local N="$2"
-	local post_cmd="echo -e \"EPOCHREALTIME=\$EPOCHREALTIME\nEPOCHREALTIME1=\$EPOCHREALTIME1\""
+	local post_cmd="echo -e \"MYPID=\$MYPID\nTS=\$TS\nMS=\$MS\""
 	local cmd="enable -f 'src/.libs/$M.so' $N && $N && $post_cmd"
 	cmd="command env command bash --norc --noprofile -c '$cmd'"
 

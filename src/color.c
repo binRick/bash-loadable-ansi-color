@@ -16,6 +16,10 @@
 #include "errnos.h"
 #include "utils.h"
 #include "color.h"
+#include <time.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 #define INIT_DYNAMIC_VAR(var, val, gfunc, afunc)   \
     do                                             \
@@ -68,10 +72,83 @@ assign_mypid(
     return(self);
 }
 
+static SHELL_VAR *
+assign_var (
+     SHELL_VAR *self,
+     char *value,
+     arrayind_t unused,
+     char *key )
+{
+  return (self);
+}
+
+
+long millis(){
+    struct timespec _t;
+    clock_gettime(CLOCK_REALTIME, &_t);
+    return _t.tv_sec*1000 + lround(_t.tv_nsec/1e6);
+}
+
+uint64_t get_now_time() {
+  struct timespec spec;
+  if (clock_gettime(1, &spec) == -1) { /* 1 is CLOCK_MONOTONIC */
+    abort();
+  }
+
+  return spec.tv_sec * 1000 + spec.tv_nsec / 1e6;
+}
+
+long currentTimeMillis() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+
+  return time.tv_sec * 1000 + time.tv_usec / 1000;
+}
+
+static SHELL_VAR *
+get_ms (SHELL_VAR *var)
+{
+  char *p;
+	struct timeval tv = { 0 };
+	if (gettimeofday(&tv, NULL) < 0) {
+		builtin_error("Failed to get time of day: %m");
+		return NULL;
+	}
+  long TS = currentTimeMillis();
+	if (asprintf(&p, "%ld", TS) < 0) {
+		builtin_error("Failed to get memory for time of day: %m");
+		return NULL;
+	}
+	VSETATTR(var, att_integer);
+	var_setvalue(var, p);
+  return var;
+}
+
+static SHELL_VAR *
+get_ts (SHELL_VAR *var)
+{
+  char *p;
+	struct timeval tv = { 0 };
+	if (gettimeofday(&tv, NULL) < 0) {
+		builtin_error("Failed to get time of day: %m");
+		return NULL;
+	}
+  int TS = tv.tv_sec;
+	if (asprintf(&p, "%d", TS) < 0) {
+		builtin_error("Failed to get memory for time of day: %m");
+		return NULL;
+	}
+	VSETATTR(var, att_integer);
+	var_setvalue(var, p);
+  return var;
+}
+
 int color_builtin_load(s) char *s;
 
 {
-    INIT_DYNAMIC_VAR("MYPID", (char *)NULL, get_mypid, assign_mypid);
+    INIT_DYNAMIC_VAR ("TS", (char *)NULL, get_ts, assign_var);
+    INIT_DYNAMIC_VAR ("MS", (char *)NULL, get_ms, assign_var);
+    INIT_DYNAMIC_VAR("MYPID", (char *)NULL, get_mypid, assign_var);
     SHELL_VAR *v1 = find_variable("V1");
     if (v1 != NULL)
     {
