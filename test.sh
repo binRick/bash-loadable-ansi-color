@@ -2,6 +2,9 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 COLORS=0
+if ! command -v ansi; then
+  alias ansi=$(pwd)/ansi
+fi
 
 test_builtin() {
 	local M="$1"
