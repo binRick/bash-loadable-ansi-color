@@ -2,6 +2,7 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 COLORS=0
+DEFAULT_POST_CMD="echo -e \"MYPID=\$MYPID\nTS=\$TS\nMS=\$MS\""
 if ! command -v ansi; then
   alias ansi=$(pwd)/ansi
 fi
@@ -13,7 +14,7 @@ ansi --magenta --bold "Epoch: $(date +%s)"
 test_builtin() {
 	local M="$1"
 	local N="$2"
-	local post_cmd="echo -e \"MYPID=\$MYPID\nTS=\$TS\nMS=\$MS\""
+	local post_cmd="${3:-$DEFAULT_POST_CMD}"
 	local cmd="enable -f 'src/.libs/$M.so' $N && $N && $post_cmd"
 	cmd="command env command bash --norc --noprofile -c '$cmd'"
 
@@ -43,4 +44,5 @@ test_builtin() {
 
 }
 
-test_builtin color color
+test_builtin color color "$DEFAULT_POST_CMD"
+test_builtin color color "for x in \$(seq 1 5); do echo -e \"TS=\$TS|MS=\$MS\"; sleep 2; done"
