@@ -2,6 +2,7 @@
 set -e
 DEFAULT_CMD="./test.sh"
 cmd="${@:-$DEFAULT_CMD}"
-cmd="nodemon -w \*.sh -w src -e c,sh,h --delay .2 -V -x /bin/sh -- -c 'make clean >/dev/null 2>&1; make >/dev/null && $cmd||true'"
+flock_pfx="flock -x /var/spool/bash-loadables.lock"
+cmd="reap passh nodemon -i src/\*.lo -i src/\*.la  -w \*.sh -w src -e c,sh,h --delay .2 -V -x /bin/sh -- -c '$flock_pfx sh -c \"make clean >/dev/null 2>&1; make >/dev/null && $cmd\"||true'"
 
-eval "$cmd"
+eval "$cmd" || sleep .5 && eval "$cmd"

@@ -39,6 +39,7 @@
 #define FG_INVERSE   "\033[7m"
 #define FG_INVISIBLE "\033[8m"
 #define FG_STRIKE    "\033[29m"
+
 #define FG_RESET      "\033[0m"
 #define NOCOLOR      "\033[0m"
 #define BG_RESET      "\033[49m"
