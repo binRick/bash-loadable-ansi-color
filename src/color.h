@@ -29,7 +29,14 @@
 #define BG_WHITE    "\033[0;47m"
 
 #define FG_BD       "\033[1m"
+#define FG_FAINT      "\033[2m"
+#define FG_ITALIC   "\033[3m"
 #define FG_UL       "\033[4m"
-#define NOCOLOR     "\033[0m"
+#define FG_BLINK    "\033[5m"
+#define FG_RAPID_BLINK "\033[6m"
+#define FG_INVERSE   "\033[7m"
+#define FG_INVISIBLE "\033[8m"
+#define FG_STRIKE    "\033[29m"
+#define NOCOLOR      "\033[0m"
 
 #endif

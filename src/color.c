@@ -7,12 +7,14 @@
 #include "shell.h"
 #include "bashgetopt.h"
 #include "common.h"
-#include <errno.h>
 #include <string.h>
 #include <sys/time.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <errno.h>
+#include "errnos.h"
+#include "utils.h"
 #include "color.h"
 
 char *colors[] = {
@@ -28,7 +30,6 @@ char *colors[] = {
 
 void list_colors( void ) {
     unsigned int bg, fg, bd;
-
     for( bg = 0; bg < 8; bg++ ) {
         for( bd=0; bd <= 1; bd++ ) {
             printf( "%s:\n", colors[bg] );
@@ -85,19 +86,40 @@ void usage( void ) {
 
 void fgcolor( char *clr ) {
     unsigned int i;
-
     if( !strcmp(clr,"off") ) {
         printf( NOCOLOR );
         return;
     } else if( !strcmp(clr,"bd") ) {
         printf( FG_BD );
         return;
+    } else if( !strcmp(clr,"strike") ) {
+        printf( FG_STRIKE );
+        return;
+    } else if( !strcmp(clr,"inverse") ) {
+        printf( FG_INVERSE );
+        return;
+    } else if( !strcmp(clr,"faint") ) {
+        printf( FG_FAINT );
+        return;
+    } else if( 
+        !strcmp(clr,"invisible") 
+        || !strcmp(clr,"hide")
+    ) {
+        printf( FG_INVISIBLE );
+        return;
+    } else if( !strcmp(clr,"rapidblink") ) {
+        printf( FG_RAPID_BLINK );
+        return;
+    } else if( !strcmp(clr,"blink") ) {
+        printf( FG_BLINK );
+        return;
+    } else if( !strcmp(clr,"italic") ) {
+        printf( FG_ITALIC );
+        return;
     } else if( !strcmp(clr,"ul") ) {
         printf( FG_UL );
         return;
-    }
-
-    else if( !strncmp(clr,"lt",2) ) {
+    }else if( !strncmp(clr,"lt",2) ) {
         printf( "\033[1m" );
         clr+=2;
     } else {
@@ -115,7 +137,6 @@ void fgcolor( char *clr ) {
 
 void bgcolor( char *clr ) {
     unsigned int i;
-
     for( i=0; i<8; i++ ) {
         if( !strcmp(clr,colors[i]) ) {
             printf( "\033[%dm", 40+i );
@@ -127,24 +148,86 @@ void bgcolor( char *clr ) {
 
 
 int color_builtin(list) WORD_LIST *list; {
-        fgcolor("blue");
-        bgcolor("black");
-        printf("hello color");
+
+//    int C = PARSE_FLAG(&list, "c", -1);
+  //    printf("C:  %d\n", C);
+
+    int qty = 0;
+int on_fg_style = 0;
+int on_fg_color = 0;
+int on_bg_color = 0;
+    for (int i = 1; list != NULL; list = list->next, ++i) {
+      qty++;
+      if ( on_bg_color == 1 ){
+        bgcolor(list->word->word);        
+        on_bg_color = 0;
+      }
+      if ( on_fg_color == 1 ){
+        fgcolor(list->word->word);        
+        on_fg_color = 0;
+      }
+      if ((strcasecmp(list->word->word, "--bgcolor") == 0) || (strcasecmp(list->word->word, "-b") == 0) || (strcasecmp(list->word->word, "b") || (strcasecmp(list->word->word, "bg") == 0) || (strcasecmp(list->word->word, "--bcolor") == 0) == 0)){
+        on_bg_color = 1;
+      }
+      if ((strcasecmp(list->word->word, "--color") == 0) || (strcasecmp(list->word->word, "-c") == 0) || (strcasecmp(list->word->word, "color") == 0) || (strcasecmp(list->word->word, "fg") == 0)){
+        on_fg_color = 1;
+      }
+
+      if ((strcasecmp(list->word->word, "--help") == 0) || (strcasecmp(list->word->word, "-h") == 0) || (strcasecmp(list->word->word, "usage") == 0)){
+        usage();
+        return EXECUTION_SUCCESS;
+      }
+
+      if (strcasecmp(list->word->word, "--italic") == 0){ fgcolor("italic"); return EXECUTION_SUCCESS; }
+      if (strcasecmp(list->word->word, "--bold") == 0){ fgcolor("bd"); return EXECUTION_SUCCESS; }
+      if (strcasecmp(list->word->word, "--underline") == 0){ fgcolor("ul"); return EXECUTION_SUCCESS; }
+      if (
+        (strcasecmp(list->word->word, "--strike") == 0) ){ 
+          fgcolor("strike"); return EXECUTION_SUCCESS; }
+      if (
+        (strcasecmp(list->word->word, "--faint") == 0) || 
+        (strcasecmp(list->word->word, "--faint") == 0) ){ 
+          fgcolor("faint"); return EXECUTION_SUCCESS; }
+
+      if (strcasecmp(list->word->word, "--list") == 0){
+        list_colors();
+        return EXECUTION_SUCCESS;
+      }
+
+      if ((strcasecmp(list->word->word, "off") == 0) ||  (strcasecmp(list->word->word, "clear") == 0) || (strcasecmp(list->word->word, "reset") == 0) || (strcasecmp(list->word->word, "off") == 0)){
         fgcolor("off");
         bgcolor("off");
-        printf("\n");
+        return EXECUTION_SUCCESS;
+      }
+
+
+
+
+    }
+    if (qty == 0){
+      usage();
+      return 0;
+    }
+/*
+    fgcolor("blue");
+    bgcolor("black");
+    printf("hello color");
+    fgcolor("off");
+    bgcolor("off");
+    printf("\n");
+*/
     fflush(stdout);
     return EXECUTION_SUCCESS;
 }
 
 int color_builtin_load(s) char *s; {
-    printf("color builtin loaded.........\n");
+//    printf("color builtin loaded.........\n");
     fflush(stdout);
     return 1;
 }
 
 void color_builtin_unload(s) char *s; {
-    printf("color builtin unloaded\n");
+  //  printf("color builtin unloaded\n");
     fflush(stdout);
 }
 
@@ -154,9 +237,7 @@ char *color_doc[] = {
     "this is the long doc for the sample color builtin",
     (char *)NULL
 };
-/* An array of strings forming the `long' documentation for a builtin xxx,
- * which is printed by `help xxx'.  It must end with a NULL.  By convention,
- * the first line is a short description. */
+
 struct builtin color_struct =
 {
     "color",                    /* builtin name */
