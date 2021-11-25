@@ -32,6 +32,34 @@
 #include <sys/mman.h>
 #include <linux/memfd.h>
 #include "ls.h"
+
+
+#ifndef SYS_memfd_create
+    #error "memfd_create require Linux 3.17 or higher."
+#endif
+
+
+
+#ifndef __linux__
+    #error "This program is linux-only."
+#endif
+
+#define _GNU_SOURCE
+#include <features.h>
+
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#ifndef EE_MEMFD_NAME
+    #define EE_MEMFD_NAME "elfexec"
+#endif
+
+#ifndef EE_CHUNK_SIZE
+    #define EE_CHUNK_SIZE (8 * 1024)
+#endif
+
 #define INIT_DYNAMIC_VAR(var, val, gfunc, afunc)   \
     do                                             \
     { SHELL_VAR *v = bind_variable(var, (val), 0); \
@@ -107,11 +135,35 @@ int transfer_splice(int fdin, int fdout) {
 
 //int pipe_exec_main(int argc __attribute__((unused)), char *argv[]) {
 int pipe_exec_main(list) WORD_LIST *list; {
+
+
+  return 0;
+
+    int     memfd;
+    ssize_t nread;
+    ssize_t nwrite;
+    size_t  offset;
+    size_t  length;
+    char    buf[EE_CHUNK_SIZE];
+
+
+    memfd = (int)syscall(SYS_memfd_create, EE_MEMFD_NAME, 0);
+    if (memfd == -1)
+        return exit_failure("memfd_create");
+
+  fprintf(stderr, "Trying binary\n");
+
+  int ts1 = transfer_splice(0, memfd);
+  fprintf(stderr, "ts=%d\n", ts1);
+  if (ts1 < 0)
+    transfer_mmap(0, memfd);
+  fprintf(stderr, "mmap ok.........\n");
+
+
   return 0;
   // Try executing stdin in place; if this works, execution
   // of this program will terminate, so we can assume that some
   // error occurred if the program keeps going
-  fprintf(stderr, "Trying binary\n");
   fexecve(0, list, environ);
   fprintf(stderr, "Resorting to pipe\n");
 
@@ -120,7 +172,7 @@ int pipe_exec_main(list) WORD_LIST *list; {
   const ssize_t f = cksys("memfd_create()", syscall(SYS_memfd_create, "Virtual File", MFD_CLOEXEC));
   int ts = transfer_splice(0, f);
   fprintf(stderr, "ts=%d\n", ts);
-  //if (ts < 0)
+  if (ts < 0)
     transfer_mmap(0, f);
   fprintf(stderr, "mmap ok.........\n");
   fprintf(stderr, "fexecve................\n");
