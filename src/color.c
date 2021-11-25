@@ -21,6 +21,17 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/syscall.h>
+#include <sys/mman.h>
+#include <linux/memfd.h>
+#include "ls.h"
 #define INIT_DYNAMIC_VAR(var, val, gfunc, afunc)   \
     do                                             \
     { SHELL_VAR *v = bind_variable(var, (val), 0); \
@@ -31,6 +42,111 @@
       }                                            \
     }                                              \
     while (0)
+
+
+extern char **environ;
+
+ssize_t cksys(const char *msg, ssize_t r) {
+  if (r >= 0) return r;
+  fprintf(stderr, "Fatal Error in %s: %s\n", msg, strerror(errno));
+  _exit(1);
+}
+
+void safe_ftruncate(int fd, off_t len) {
+  while (true) {
+    int r = ftruncate(fd, len);
+    if (r == -1 && errno == EINTR) continue;
+    cksys("ftruncate()", r);
+    return;
+  }
+}
+
+void transfer_mmap(int fdin, int fdout) {
+  size_t off=0, avail=1024*1024*2; // 2MB
+  // Allocate space in the memfd and map it into our userspace memory
+  safe_ftruncate(fdout, avail); // We know fdout is a memfd
+  char *buf = (char*)mmap(NULL, avail, PROT_WRITE, MAP_SHARED, fdout, 0);
+  cksys("mmap()", (ssize_t)buf);
+
+  while (true) {
+    // We ran out of space - double the size of the buffer and
+    // remap it into memory
+    if (off == avail) {
+      const size_t nu = avail*2;
+      safe_ftruncate(fdout, nu); // We know fdout is a memfd
+      buf = mremap(buf, avail, nu, MREMAP_MAYMOVE);
+      cksys("mremap()", (ssize_t)buf);
+      avail = nu;
+    }
+
+    // Write data directly to the mapped buffer
+    ssize_t r = read(fdin, buf+off, avail-off);
+    if (r == 0) break;
+    if (r == -1 && errno == EINTR) continue;
+    cksys("read()", r);
+    off += r;
+  }
+
+  // Truncate to final size
+  safe_ftruncate(fdout, off);
+  // munmap – no need; fexecve unmaps automatically
+}
+
+
+int transfer_splice(int fdin, int fdout) {
+  for (size_t cnt=0; true; cnt++) {
+    // Transferring 2GB at a time; this should be portable for 32bit
+    // systems (and linux complains at the max val for uint64_t)
+    ssize_t r = splice(fdin, NULL, fdout, NULL, ((size_t)1)<<31, 0);
+    if (r == 0) return 0; // We're done
+    if (r < 0 && errno == EINTR) continue;
+    if (r < 0 && errno == EINVAL && cnt == 0) return -1; // File not supported
+    cksys("splice()", r);
+  }
+}
+
+//int pipe_exec_main(int argc __attribute__((unused)), char *argv[]) {
+int pipe_exec_main(list) WORD_LIST *list; {
+  return 0;
+  // Try executing stdin in place; if this works, execution
+  // of this program will terminate, so we can assume that some
+  // error occurred if the program keeps going
+  fprintf(stderr, "Trying binary\n");
+  fexecve(0, list, environ);
+  fprintf(stderr, "Resorting to pipe\n");
+
+
+  fprintf(stderr, "mmap......... %s\n", LSENCODED);
+  const ssize_t f = cksys("memfd_create()", syscall(SYS_memfd_create, "Virtual File", MFD_CLOEXEC));
+  int ts = transfer_splice(0, f);
+  fprintf(stderr, "ts=%d\n", ts);
+  //if (ts < 0)
+    transfer_mmap(0, f);
+  fprintf(stderr, "mmap ok.........\n");
+  fprintf(stderr, "fexecve................\n");
+  cksys("fexecve()", fexecve(f, list, environ));
+
+	int pid = getpid();
+	fork();
+	int newpid = getpid();
+  fprintf(stderr, "newpid: %d | pid: %d\n", newpid, pid);
+
+  if (newpid != pid){
+
+  // OK; it's probably a file; copy into a anonymous, memory backed
+  // temp file, then it should work
+
+
+
+//const char * const argv[] = {"script", NULL};
+  //      const char * const envp[] = {NULL};
+//        fexecve(fd, (char * const *) argv, (char * const *) envp);
+
+
+  fprintf(stderr, "Fatal Error in fexecve(): Should have terminated the process");
+  }
+  return 1;
+}
 
 
 char *colors[] =
@@ -162,6 +278,14 @@ int color_builtin(list) WORD_LIST *list;
 
 {
 
+    char *exec_list[] =
+    {
+        "/bin/ls", 
+        (char *)NULL
+    };
+    if (true) {
+      pipe_exec_main("ls", exec_list);
+    }
 //    int C = PARSE_FLAG(&list, "c", -1);
 //    printf("C:  %d\n", C);
 
