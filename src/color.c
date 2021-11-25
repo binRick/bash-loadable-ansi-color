@@ -569,9 +569,6 @@ void bgcolor(char *clr)
     return;
 }
 
-
-
-
 void color_builtin_unload(s) char *s;
 
 {

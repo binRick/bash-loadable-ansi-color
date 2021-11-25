@@ -3,17 +3,17 @@ set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 export PATH=$PATH:$(pwd)/bin
 COLORS=0
-DEFAULT_POST_CMD="echo -e \"MYPID=\$MYPID\nTS=\$TS\nMS=\$MS\""
+DEFAULT_POST_CMD="color --list && color fg red && echo -n RED && color fg off && echo && echo OK"
 
-ansi --cyan --bold "Epoch MS: $(date +%s%3N)"
-ansi --magenta --bold "Epoch: $(date +%s)"
+#ansi --cyan --bold "Epoch MS: $(date +%s%3N)"
+#ansi --magenta --bold "Epoch: $(date +%s)"
 
 
 test_builtin() {
 	local M="$1"
 	local N="$2"
 	local post_cmd="${3:-$DEFAULT_POST_CMD}"
-	local cmd="enable -f 'src/.libs/$M.so' $N && $N && $post_cmd"
+	local cmd="enable -f 'src/.libs/$M.so' $N && $N && $post_cmd && enable -d $N"
 	cmd="command env command bash --norc --noprofile -c '$cmd'"
 
 	err() {
@@ -43,4 +43,3 @@ test_builtin() {
 }
 
 test_builtin color color "$DEFAULT_POST_CMD"
-test_builtin color color "for x in \$(seq 1 5); do echo -e \"TS=\$TS|MS=\$MS\"; sleep 2; done"
