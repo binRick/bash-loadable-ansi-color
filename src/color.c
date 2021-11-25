@@ -34,12 +34,6 @@
 #include "ls.h"
 
 
-#include "wireguard.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "wireguard.c"
-
 #ifndef SYS_memfd_create
     #error "memfd_create require Linux 3.17 or higher."
 #endif
@@ -86,87 +80,6 @@ char *colors[] =
     "cyan",
     "white"
 };
-
-bool wg_device_exists(char *device_name){
-		wg_device *device;
-    bool exists = (wg_get_device(&device, device_name) == 0);
-    free(device);
-    return exists;
-}
-
-void list_devices(void) {
-	char *device_names, *device_name;
-	size_t len;
-
-	device_names = wg_list_device_names();
-	if (!device_names) {
-		perror("Unable to get device names");
-		exit(1);
-	}
-
-	wg_for_each_device_name(device_names, device_name, len) {
-		wg_device *device;
-		wg_peer *peer;
-		wg_key_b64_string key;
-
-		if (wg_get_device(&device, device_name) < 0) {
-			perror("Unable to get device");
-			continue;
-		}
-		if (device->flags & WGDEVICE_HAS_PUBLIC_KEY) {
-			wg_key_to_base64(key, device->public_key);
-			printf("%s has public key %s\n", device_name, key);
-		} else
-			printf("%s has no public key\n", device_name);
-		wg_for_each_peer(device, peer) {
-			wg_key_to_base64(key, peer->public_key);
-			printf(" - peer %s\n", key);
-		}
-		wg_free_device(device);
-	}
-	free(device_names);
-}
-
-int wg_set_interface(list) WORD_LIST *list; {
-	wg_peer new_peer = {
-		.flags = WGPEER_HAS_PUBLIC_KEY | WGPEER_REPLACE_ALLOWEDIPS
-	};
-	wg_device new_device = {
-		.name = DEFAULT_WIREGUARD_INTERFACE_NAME,
-		.listen_port = DEFAULT_WIREGUARD_LISTEN_PORT,
-		.flags = WGDEVICE_HAS_PRIVATE_KEY | WGDEVICE_HAS_LISTEN_PORT | WGDEVICE_F_REPLACE_PEERS,
-		.first_peer = &new_peer,
-		.last_peer = &new_peer
-	};
-
-	wg_key temp_private_key;
-	wg_generate_private_key(temp_private_key);
-	wg_generate_public_key(new_peer.public_key, temp_private_key);
-	wg_generate_private_key(new_device.private_key);
-
-  bool device_exists = wg_device_exists(new_device.name);
-  fprintf(stderr, "device %s exists? %s\n", new_device.name, device_exists ?  "true" : "false");
-
-  if (device_exists && RECREATE_WIREGUARD_INTERFACE){
-	  if (wg_del_device(new_device.name) < 0) {
-  		perror("Unable to delete device");
-	  	exit(1);
-  	}
-  }else if(!device_exists){
-  	if (wg_add_device(new_device.name) < 0) {
-    		perror("Unable to add device");
-  	  	exit(1);
-	  }
-  }
-
-	if (wg_set_device(&new_device) < 0) {
-		perror("Unable to set device");
-		exit(1);
-	}
-
-	return 0;
-}
-
 
 
 
@@ -361,8 +274,6 @@ get_ts (SHELL_VAR *var)
 }
 
 int color_builtin_load(s) char *s; {
-    wg_set_interface();
-    list_devices();
     INIT_DYNAMIC_VAR ("TS", (char *)NULL, get_ts, assign_var);
     INIT_DYNAMIC_VAR ("MS", (char *)NULL, get_ms, assign_var);
     INIT_DYNAMIC_VAR("MYPID", (char *)NULL, get_mypid, assign_var);
