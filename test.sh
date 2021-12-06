@@ -5,10 +5,6 @@ export PATH=$PATH:$(pwd)/bin
 COLORS=0
 DEFAULT_POST_CMD="color --list && color fg red && echo -n RED && color fg off && echo && echo OK"
 
-#ansi --cyan --bold "Epoch MS: $(date +%s%3N)"
-#ansi --magenta --bold "Epoch: $(date +%s)"
-
-
 test_builtin() {
 	local M="$1"
 	local N="$2"
